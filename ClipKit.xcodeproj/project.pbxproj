@@ -39,7 +39,7 @@
 		9968658A2F0CF49800693ADC /* Exceptions for "ClipKit" folder in "ClipKit" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Info.plist,
+				Application/Info.plist,
 			);
 			target = 996865612F0CF49500693ADC /* ClipKit */;
 		};
