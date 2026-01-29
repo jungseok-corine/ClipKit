@@ -8,7 +8,7 @@
 import Foundation
 import AVFoundation
 
-struct VideoProject {
+struct VideoProject: Codable {
     let id: UUID
     let videoURL: URL
     

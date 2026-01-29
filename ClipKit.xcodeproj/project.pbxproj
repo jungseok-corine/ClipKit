@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		993F08A52F1483E1004508E3 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 993F08A42F1483E1004508E3 /* SnapKit */; };
-		993F08A72F1483E1004508E3 /* SnapKit-Dynamic in Frameworks */ = {isa = PBXBuildFile; productRef = 993F08A62F1483E1004508E3 /* SnapKit-Dynamic */; };
 		993F08AA2F14840D004508E3 /* Swinject in Frameworks */ = {isa = PBXBuildFile; productRef = 993F08A92F14840D004508E3 /* Swinject */; };
 /* End PBXBuildFile section */
 
@@ -72,7 +71,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				993F08A52F1483E1004508E3 /* SnapKit in Frameworks */,
-				993F08A72F1483E1004508E3 /* SnapKit-Dynamic in Frameworks */,
 				993F08AA2F14840D004508E3 /* Swinject in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -135,7 +133,6 @@
 			name = ClipKit;
 			packageProductDependencies = (
 				993F08A42F1483E1004508E3 /* SnapKit */,
-				993F08A62F1483E1004508E3 /* SnapKit-Dynamic */,
 				993F08A92F14840D004508E3 /* Swinject */,
 			);
 			productName = ClipKit;
@@ -307,7 +304,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8CKPNKA3V9;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = ClipKit/Info.plist;
+				INFOPLIST_FILE = ClipKit/Application/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -344,7 +341,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 8CKPNKA3V9;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = ClipKit/Info.plist;
+				INFOPLIST_FILE = ClipKit/Application/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -642,11 +639,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 993F08A32F1483E1004508E3 /* XCRemoteSwiftPackageReference "SnapKit" */;
 			productName = SnapKit;
-		};
-		993F08A62F1483E1004508E3 /* SnapKit-Dynamic */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 993F08A32F1483E1004508E3 /* XCRemoteSwiftPackageReference "SnapKit" */;
-			productName = "SnapKit-Dynamic";
 		};
 		993F08A92F14840D004508E3 /* Swinject */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -9,7 +9,7 @@ import Foundation
 import AVFoundation
 import CoreImage
 
-enum FilterType {
+enum FilterType: String, Codable {
     case original
     case sepia
     case noir
