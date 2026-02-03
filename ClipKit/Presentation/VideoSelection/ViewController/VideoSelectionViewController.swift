@@ -108,8 +108,34 @@ final class VideoSelectionViewController: UIViewController {
     }
     
     private func handleSelecetedVideo(url: URL) {
-        // TODO: VideoEditorViewController로 이동
-        print("선택된 비디오: \(url)")
+        // VideoProject 생성
+        let project = VideoProject(videoURL: url)
+        
+        // Repository & Service 생성 (임시 - 나중에 DI Container로 교체)
+        let repository = FileManagerVideoProjectRepository()
+        let service = AVFoundationVideoEditingService()
+        
+        // UseCase 생성
+        let trimUseCase = TrimVideoUseCase(repository: repository)
+        let filterUseCase = ApplyFilterUseCase(repository: repository)
+        let textUseCase = AddTextOverlayUseCase(repository: repository)
+        let exportUseCase = ExportVideoUseCase(
+            repository: repository,
+            editingService: service
+        )
+        
+        // ViewModel 생성
+        let viewModel = VideoEditorViewModel(
+            project: project,
+            trimVideoUseCase: trimUseCase,
+            applyFilterUseCase: filterUseCase,
+            addTextOverlayUseCase: textUseCase,
+            exportVideoUseCase: exportUseCase
+        )
+        
+        // VideoEditorViewController
+        let editorVC = VideoEditorViewController(viewModel: viewModel)
+        navigationController?.pushViewController(editorVC, animated: true)
     }
 }
 

@@ -20,11 +20,11 @@ final class TrimVideoUseCase {
         ///   - project: 편집할 프로젝트
         ///   - start: 시작 시간 (초)
         ///   - end: 종료 시간 (초)
-    func execute(project: VideoProject, start: Double, end: Double) async throws {
+    func execute(project: VideoProject, start: Double, end: Double) async throws -> VideoProject {
         var updatedProject = project
         updatedProject.trimStart = start
         updatedProject.trimEnd = end
-        
         try await repository.save(updatedProject)
+        return updatedProject
     }
 }

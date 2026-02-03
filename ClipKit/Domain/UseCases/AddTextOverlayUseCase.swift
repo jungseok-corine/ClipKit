@@ -18,22 +18,22 @@ final class AddTextOverlayUseCase {
     /// - Parameters:
     ///   - project: 편집할 프로젝트
     ///   - overlay: 추가할 텍스트 오버레이
-    func execute(project: VideoProject, overlay: TextOverlay) async throws {
+    func execute(project: VideoProject, overlay: TextOverlay) async throws -> VideoProject {
         var updatedProject = project
         updatedProject.textOverlays.append(overlay)
-        
         try await repository.save(updatedProject)
+        return updatedProject
     }
     
     /// 텍스트 오버레이 삭제
     /// - Parameters:
     ///   - project: 편집할 프로젝트
     ///   - overlayId: 삭제할 오버레이 ID
-    func remove(project: VideoProject, overlayID: UUID) async throws {
+    func remove(project: VideoProject, overlayId: UUID) async throws -> VideoProject {
         var updatedProject = project
-        updatedProject.textOverlays.removeAll { $0.id == overlayID }
-        
+        updatedProject.textOverlays.removeAll { $0.id == overlayId }
         try await repository.save(updatedProject)
+        return updatedProject
     }
     
     /// 텍스트 오버레이 업데이트

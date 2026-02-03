@@ -17,6 +17,11 @@ final class AVFoundationVideoEditingService: VideoEditingService {
     
     /// 비디오 Export (트림 + 필터 + 텍스트)
     func export(project: VideoProject) async throws -> URL {
+        print("🎬 [Service] Export 시작")
+        print("   - 필터: \(project.selectedFilter?.displayName ?? "없음")")
+        print("   - 텍스트: \(project.textOverlays.count)개")
+        
+        
         // 1. Composition 생성 (트림 적용)
         let composition = try await createComposition(from: project)
         
@@ -25,6 +30,7 @@ final class AVFoundationVideoEditingService: VideoEditingService {
             throw VideoEditingError.exportFailed
         }
         let videoSize = try await videoTrack.load(.naturalSize)
+        print("   - 비디오 크기: \(videoSize)")
         
         // 3. VideoComposition 생성 (필터 + 텍스트 적용)
         let videoComposition = try await createVideoComposition(
@@ -34,12 +40,19 @@ final class AVFoundationVideoEditingService: VideoEditingService {
             videoSize: videoSize
         )
         
+        if videoComposition != nil {
+            print("✅ [Service] VideoComposition 생성됨")
+        } else {
+            print("⚠️ [Service] VideoComposition이 nil (필터/텍스트 없음)")
+        }
+        
         // 4. Export
         let outputURL = try await exportComposition(
             composition,
             videoComposition: videoComposition
         )
         
+        print("✅ [Service] Export 완료")
         return outputURL
     }
     
@@ -124,85 +137,36 @@ final class AVFoundationVideoEditingService: VideoEditingService {
         textOverlays: [TextOverlay],
         videoSize: CGSize
     ) async throws -> AVMutableVideoComposition? {
-        // 비디오 트랙 가져오기
-        guard let videoTrack = try await composition.loadTracks(withMediaType: .video).first else {
-            throw VideoEditingError.filterFailed
+        // 필터만 처리 (텍스트는 향후 추가 예정)
+        guard let filter = filter, filter != .original else {
+            return nil
         }
         
-        let trackTransform = try await videoTrack.load(.preferredTransform)
+        print("🎨 [VideoComposition] 필터 적용: \(filter.displayName)")
         
-        // 필터가 있을 때만 VideoComposition 생성
-        if let filter = filter, filter != .original {
-            // 필터 적용
-            let videoComposition = AVMutableVideoComposition(
-                asset: composition) { request in
-                    let source = request.sourceImage.clampedToExtent()
-                    
-                    guard let filteredImage = self.applyFilter(to: source, filterType: filter) else {
-                        request.finish(with: source, context: nil)
-                        return
-                    }
-                    
-                    request.finish(with: filteredImage, context: nil)
-                }
-            
-            
-            videoComposition.renderSize = videoSize
-            videoComposition.frameDuration = CMTime(value: 1, timescale: 30)
-            
-            let instruction = AVMutableVideoCompositionInstruction()
-            instruction.timeRange = CMTimeRange(start: .zero, duration: composition.duration)
-            
-            let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: videoTrack)
-            layerInstruction.setTransform(trackTransform, at: .zero)
-            
-            instruction.layerInstructions = [layerInstruction]
-            videoComposition.instructions = [instruction]
-            
-            // 텍스트 오버레이 추가
-            if !textOverlays.isEmpty {
-                let animationTool = createAnimationTool(
-                    textOverlays: textOverlays,
-                    videoSize: videoSize,
-                    duration: composition.duration
-                )
-                videoComposition.animationTool = animationTool
-            }
-            
-            return videoComposition
-            
-        } else if !textOverlays.isEmpty {
-            // 필터 없고 텍스트만 있을 때
-            let videoComposition = AVMutableVideoComposition(
-                asset: composition,
-                applyingCIFiltersWithHandler: { request in
+        let videoComposition = AVMutableVideoComposition(
+            asset: composition,
+            applyingCIFiltersWithHandler: { [weak self] request in
+                guard let self = self else {
                     request.finish(with: request.sourceImage, context: nil)
+                    return
                 }
-            )
-            videoComposition.renderSize = videoSize
-            videoComposition.frameDuration = CMTime(value: 1, timescale: 30)
-            
-            let instruction = AVMutableVideoCompositionInstruction()
-            instruction.timeRange = CMTimeRange(start: .zero, duration: composition.duration)
-            
-            let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: videoTrack)
-            layerInstruction.setTransform(trackTransform, at: .zero)
-            
-            instruction.layerInstructions = [layerInstruction]
-            videoComposition.instructions = [instruction]
-            
-            let animationTool = createAnimationTool(
-                textOverlays: textOverlays,
-                videoSize: videoSize,
-                duration: composition.duration
-            )
-            videoComposition.animationTool = animationTool
-            
-            return videoComposition
-        }
+                
+                let source = request.sourceImage.clampedToExtent()
+                
+                guard let filteredImage = self.applyFilter(to: source, filterType: filter) else {
+                    request.finish(with: source, context: nil)
+                    return
+                }
+                
+                request.finish(with: filteredImage, context: nil)
+            }
+        )
         
-        // 필터도 텍스트도 없으면 nil
-        return nil
+        videoComposition.renderSize = videoSize
+        videoComposition.frameDuration = CMTime(value: 1, timescale: 30)
+        
+        return videoComposition
     }
     
     /// 이미지에 필터 적용
@@ -213,18 +177,28 @@ final class AVFoundationVideoEditingService: VideoEditingService {
         
         switch filterType {
         case .sepia:
-            guard let filter = CIFilter(name: filterName) else { return image }
+            guard let filter = CIFilter(name: filterName) else {
+                print("⚠️ 필터 생성 실패: \(filterName)")
+                return image
+            }
+            
             filter.setValue(image, forKey: kCIInputImageKey)
             filter.setValue(0.8, forKey: kCIInputIntensityKey)
-            return filter.outputImage
+            return filter.outputImage ?? image
             
         case .noir:
-            guard let filter = CIFilter(name: filterName) else { return image }
+            guard let filter = CIFilter(name: filterName) else {
+                print("⚠️ 필터 생성 실패: \(filterName)")
+                return image
+            }
             filter.setValue(image, forKey: kCIInputImageKey)
             return filter.outputImage
             
         case .vivid:
-            guard let filter = CIFilter(name: filterName) else { return image }
+            guard let filter = CIFilter(name: filterName) else {
+                print("⚠️ 필터 생성 실패: \(filterName)")
+                return image
+            }
             filter.setValue(image, forKey: kCIInputImageKey)
             filter.setValue(1.5, forKey: kCIInputSaturationKey)
             filter.setValue(0.1, forKey: kCIInputBrightnessKey)
@@ -236,64 +210,76 @@ final class AVFoundationVideoEditingService: VideoEditingService {
         }
     }
     
-    /// Animation Tool 생성 (텍스트 오버레이)
-    private func createAnimationTool(
-        textOverlays: [TextOverlay],
-        videoSize: CGSize,
-        duration: CMTime
-    ) -> AVVideoCompositionCoreAnimationTool {
-        // Parent Layer (비디오 크기)
-        let parentLayer = CALayer()
-        parentLayer.frame = CGRect(origin: .zero, size: videoSize)
-        
-        // Video Layer
-        let videoLayer = CALayer()
-        videoLayer.frame = CGRect(origin: .zero, size: videoSize)
-        parentLayer.addSublayer(videoLayer)
-        
-        // 각 텍스트 오버레이마다 CATextLayer 생성
-        for overlay in textOverlays {
-            let textLayer = CATextLayer()
-            
-            // 텍스트 설정
-            textLayer.string = overlay.text
-            textLayer.fontSize = overlay.fontSize
-            textLayer.foregroundColor = overlay.color.cgColor
-            textLayer.alignmentMode = .center
-            textLayer.isWrapped = true
-            
-            // 위치 계산 (0.0~1.0 → 실제 픽셀)
-            let xPosition = overlay.position.x * videoSize.width
-            let yPosition = (1.0 - overlay.position.y) * videoSize.height  // Y축 반전
-            
-            // 텍스트 크기 추정
-            let textWidth = videoSize.width * 0.8  // 화면의 80%
-            let textHeight = overlay.fontSize * 1.5
-            
-            textLayer.frame = CGRect(
-                x: xPosition - textWidth / 2,
-                y: yPosition - textHeight / 2,
-                width: textWidth,
-                height: textHeight
-            )
-            
-            // 배경 투명
-            textLayer.backgroundColor = UIColor.clear.cgColor
-            
-            parentLayer.addSublayer(textLayer)
-        }
-        
-        return AVVideoCompositionCoreAnimationTool(
-            postProcessingAsVideoLayer: videoLayer,
-            in: parentLayer
-        )
-    }
+//    /// Animation Tool 생성 (텍스트 오버레이)
+//    private func createAnimationTool(
+//        textOverlays: [TextOverlay],
+//        videoSize: CGSize,
+//        duration: CMTime
+//    ) -> AVVideoCompositionCoreAnimationTool {
+//        print("📝 [AnimationTool] 텍스트 레이어 생성 시작")
+//        
+//        // Video Layer (비디오가 렌더링될 레이어)
+//        let videoLayer = CALayer()
+//        videoLayer.frame = CGRect(origin: .zero, size: videoSize)
+//        
+//        // Parent Layer (전체 컴포지션)
+//        let parentLayer = CALayer()
+//        parentLayer.frame = CGRect(origin: .zero, size: videoSize)
+//        
+//        // Video Layer를 먼저 추가
+//        parentLayer.addSublayer(videoLayer)
+//        
+//        // 텍스트 레이어들 추가
+//        for overlay in textOverlays {
+//            let textLayer = CATextLayer()
+//            
+//            // 텍스트 설정
+//            let text = overlay.text as NSString
+//            textLayer.string = text
+//            textLayer.font = UIFont.systemFont(ofSize: overlay.fontSize, weight: .bold) as CFTypeRef
+//            textLayer.fontSize = overlay.fontSize
+//            textLayer.foregroundColor = overlay.color.cgColor
+//            textLayer.alignmentMode = .center
+//            textLayer.isWrapped = true
+//            
+//            // 배경
+//            textLayer.backgroundColor = UIColor.black.withAlphaComponent(0.7).cgColor
+//            textLayer.cornerRadius = 8
+//            
+//            // 크기 및 위치
+//            let textWidth: CGFloat = videoSize.width * 0.8
+//            let textHeight: CGFloat = 100
+//            let x = (videoSize.width - textWidth) / 2
+//            let y = (videoSize.height - textHeight) / 2
+//            
+//            textLayer.frame = CGRect(x: x, y: y, width: textWidth, height: textHeight)
+//            textLayer.contentsScale = 2.0
+//            
+//            // 애니메이션 범위 (전체 비디오 길이)
+//            textLayer.opacity = 1.0
+//            
+//            print("   텍스트 추가: '\(text)' at (\(x), \(y))")
+//            
+//            // Parent Layer에 추가
+//            parentLayer.addSublayer(textLayer)
+//        }
+//        
+//        print("✅ [AnimationTool] VideoLayer와 \(textOverlays.count)개 텍스트 레이어 생성 완료")
+//        
+//        // AnimationTool 생성
+//        return AVVideoCompositionCoreAnimationTool(
+//            postProcessingAsVideoLayer: videoLayer,
+//            in: parentLayer
+//        )
+//    }
     
     /// Composition Export
     private func exportComposition(
         _ composition: AVMutableComposition,
         videoComposition: AVMutableVideoComposition?
     ) async throws -> URL {
+        print("💾 [Export] 시작")
+        
         // 1. 출력 URL 생성
         let outputURL = FileManager.default
             .temporaryDirectory
@@ -309,6 +295,7 @@ final class AVFoundationVideoEditingService: VideoEditingService {
             asset: composition,
             presetName: AVAssetExportPresetHighestQuality
         ) else {
+            print("❌ [Export] ExportSession 생성 실패")
             throw VideoEditingError.exportFailed
         }
         
@@ -316,24 +303,92 @@ final class AVFoundationVideoEditingService: VideoEditingService {
         exportSession.outputURL = outputURL
         exportSession.outputFileType = .mp4
         exportSession.shouldOptimizeForNetworkUse = true
-        exportSession.videoComposition = videoComposition // ← 핵심!
+        
+        // VideoComposition 적용 (필터/텍스트)
+        if let videoComposition = videoComposition {
+            print("   VideoComposition 적용 중...")
+            exportSession.videoComposition = videoComposition
+        } else {
+            print("   VideoComposition 없음 (원본)")
+        }
         
         // 5. Export 실행
+        print("   Export 진행 중...")
         await exportSession.export()
         
         // 6. 결과 확인
         switch exportSession.status {
         case .completed:
+            print("✅ [Export] 완료: \(outputURL)")
             return outputURL
         case .failed:
-            throw exportSession.error ?? VideoEditingError.exportFailed
+            let error = exportSession.error
+            print("❌ [Export] 실패: \(error?.localizedDescription ?? "Unknown")")
+            throw error ?? VideoEditingError.exportFailed
         case .cancelled:
+            print("❌ [Export] 취소됨")
             throw VideoEditingError.exportFailed
         default:
+            print("❌ [Export] 알 수 없는 상태: \(exportSession.status.rawValue)")
             throw VideoEditingError.exportFailed
         }
-        
     }
+    
+//    /// 텍스트를 CIImage로 변환
+//    private func createTextImage(
+//        text: String,
+//        fontSize: CGFloat,
+//        color: UIColor,
+//        videoSize: CGSize
+//    ) -> CIImage? {
+//        // 텍스트 속성
+//        let attributes: [NSAttributedString.Key: Any] = [
+//            .font: UIFont.systemFont(ofSize: fontSize, weight: .bold),
+//            .foregroundColor: color,
+//            .backgroundColor: UIColor.black.withAlphaComponent(0.7)
+//        ]
+//        
+//        let attributedText = NSAttributedString(string: text, attributes: attributes)
+//        
+//        // 텍스트 크기 계산
+//        let textSize = attributedText.boundingRect(
+//            with: CGSize(width: videoSize.width * 0.8, height: .greatestFiniteMagnitude),
+//            options: [.usesLineFragmentOrigin, .usesFontLeading],
+//            context: nil
+//        ).size
+//        
+//        // 패딩 추가
+//        let paddedSize = CGSize(
+//            width: textSize.width + 40,
+//            height: textSize.height + 20
+//        )
+//        
+//        // 이미지 생성
+//        UIGraphicsBeginImageContextWithOptions(paddedSize, false, 0)
+//        defer { UIGraphicsEndImageContext() }
+//        
+//        guard let context = UIGraphicsGetCurrentContext() else { return nil }
+//        
+//        // 배경 그리기
+//        context.setFillColor(UIColor.black.withAlphaComponent(0.7).cgColor)
+//        let rect = CGRect(origin: .zero, size: paddedSize)
+//        let path = UIBezierPath(roundedRect: rect, cornerRadius: 8)
+//        path.fill()
+//        
+//        // 텍스트 그리기
+//        let textRect = CGRect(
+//            x: 20,
+//            y: 10,
+//            width: textSize.width,
+//            height: textSize.height
+//        )
+//        attributedText.draw(in: textRect)
+//        
+//        guard let uiImage = UIGraphicsGetImageFromCurrentImageContext() else { return nil }
+//        guard let cgImage = uiImage.cgImage else { return nil }
+//        
+//        return CIImage(cgImage: cgImage)
+//    }
 }
 
 // MARK: - Error
