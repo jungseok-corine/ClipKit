@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		991151C02F3324760007CA9A /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 991151BF2F3324760007CA9A /* README.md */; };
 		993F08A52F1483E1004508E3 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 993F08A42F1483E1004508E3 /* SnapKit */; };
 		993F08AA2F14840D004508E3 /* Swinject in Frameworks */ = {isa = PBXBuildFile; productRef = 993F08A92F14840D004508E3 /* Swinject */; };
 /* End PBXBuildFile section */
@@ -29,6 +30,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		991151BF2F3324760007CA9A /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		996865622F0CF49500693ADC /* ClipKit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClipKit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		996865782F0CF49800693ADC /* ClipKitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ClipKitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		996865822F0CF49800693ADC /* ClipKitUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ClipKitUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -95,6 +97,7 @@
 		996865592F0CF49500693ADC = {
 			isa = PBXGroup;
 			children = (
+				991151BF2F3324760007CA9A /* README.md */,
 				996865642F0CF49500693ADC /* ClipKit */,
 				9968657B2F0CF49800693ADC /* ClipKitTests */,
 				996865852F0CF49800693ADC /* ClipKitUITests */,
@@ -238,6 +241,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				991151C02F3324760007CA9A /* README.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
