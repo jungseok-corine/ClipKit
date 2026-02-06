@@ -210,68 +210,68 @@ final class AVFoundationVideoEditingService: VideoEditingService {
         }
     }
     
-//    /// Animation Tool 생성 (텍스트 오버레이)
-//    private func createAnimationTool(
-//        textOverlays: [TextOverlay],
-//        videoSize: CGSize,
-//        duration: CMTime
-//    ) -> AVVideoCompositionCoreAnimationTool {
-//        print("📝 [AnimationTool] 텍스트 레이어 생성 시작")
-//        
-//        // Video Layer (비디오가 렌더링될 레이어)
-//        let videoLayer = CALayer()
-//        videoLayer.frame = CGRect(origin: .zero, size: videoSize)
-//        
-//        // Parent Layer (전체 컴포지션)
-//        let parentLayer = CALayer()
-//        parentLayer.frame = CGRect(origin: .zero, size: videoSize)
-//        
-//        // Video Layer를 먼저 추가
-//        parentLayer.addSublayer(videoLayer)
-//        
-//        // 텍스트 레이어들 추가
-//        for overlay in textOverlays {
-//            let textLayer = CATextLayer()
-//            
-//            // 텍스트 설정
-//            let text = overlay.text as NSString
-//            textLayer.string = text
-//            textLayer.font = UIFont.systemFont(ofSize: overlay.fontSize, weight: .bold) as CFTypeRef
-//            textLayer.fontSize = overlay.fontSize
-//            textLayer.foregroundColor = overlay.color.cgColor
-//            textLayer.alignmentMode = .center
-//            textLayer.isWrapped = true
-//            
-//            // 배경
-//            textLayer.backgroundColor = UIColor.black.withAlphaComponent(0.7).cgColor
-//            textLayer.cornerRadius = 8
-//            
-//            // 크기 및 위치
-//            let textWidth: CGFloat = videoSize.width * 0.8
-//            let textHeight: CGFloat = 100
-//            let x = (videoSize.width - textWidth) / 2
-//            let y = (videoSize.height - textHeight) / 2
-//            
-//            textLayer.frame = CGRect(x: x, y: y, width: textWidth, height: textHeight)
-//            textLayer.contentsScale = 2.0
-//            
-//            // 애니메이션 범위 (전체 비디오 길이)
-//            textLayer.opacity = 1.0
-//            
-//            print("   텍스트 추가: '\(text)' at (\(x), \(y))")
-//            
-//            // Parent Layer에 추가
-//            parentLayer.addSublayer(textLayer)
-//        }
-//        
-//        print("✅ [AnimationTool] VideoLayer와 \(textOverlays.count)개 텍스트 레이어 생성 완료")
-//        
-//        // AnimationTool 생성
-//        return AVVideoCompositionCoreAnimationTool(
-//            postProcessingAsVideoLayer: videoLayer,
-//            in: parentLayer
-//        )
-//    }
+    //    /// Animation Tool 생성 (텍스트 오버레이)
+    //    private func createAnimationTool(
+    //        textOverlays: [TextOverlay],
+    //        videoSize: CGSize,
+    //        duration: CMTime
+    //    ) -> AVVideoCompositionCoreAnimationTool {
+    //        print("📝 [AnimationTool] 텍스트 레이어 생성 시작")
+    //
+    //        // Video Layer (비디오가 렌더링될 레이어)
+    //        let videoLayer = CALayer()
+    //        videoLayer.frame = CGRect(origin: .zero, size: videoSize)
+    //
+    //        // Parent Layer (전체 컴포지션)
+    //        let parentLayer = CALayer()
+    //        parentLayer.frame = CGRect(origin: .zero, size: videoSize)
+    //
+    //        // Video Layer를 먼저 추가
+    //        parentLayer.addSublayer(videoLayer)
+    //
+    //        // 텍스트 레이어들 추가
+    //        for overlay in textOverlays {
+    //            let textLayer = CATextLayer()
+    //
+    //            // 텍스트 설정
+    //            let text = overlay.text as NSString
+    //            textLayer.string = text
+    //            textLayer.font = UIFont.systemFont(ofSize: overlay.fontSize, weight: .bold) as CFTypeRef
+    //            textLayer.fontSize = overlay.fontSize
+    //            textLayer.foregroundColor = overlay.color.cgColor
+    //            textLayer.alignmentMode = .center
+    //            textLayer.isWrapped = true
+    //
+    //            // 배경
+    //            textLayer.backgroundColor = UIColor.black.withAlphaComponent(0.7).cgColor
+    //            textLayer.cornerRadius = 8
+    //
+    //            // 크기 및 위치
+    //            let textWidth: CGFloat = videoSize.width * 0.8
+    //            let textHeight: CGFloat = 100
+    //            let x = (videoSize.width - textWidth) / 2
+    //            let y = (videoSize.height - textHeight) / 2
+    //
+    //            textLayer.frame = CGRect(x: x, y: y, width: textWidth, height: textHeight)
+    //            textLayer.contentsScale = 2.0
+    //
+    //            // 애니메이션 범위 (전체 비디오 길이)
+    //            textLayer.opacity = 1.0
+    //
+    //            print("   텍스트 추가: '\(text)' at (\(x), \(y))")
+    //
+    //            // Parent Layer에 추가
+    //            parentLayer.addSublayer(textLayer)
+    //        }
+    //
+    //        print("✅ [AnimationTool] VideoLayer와 \(textOverlays.count)개 텍스트 레이어 생성 완료")
+    //
+    //        // AnimationTool 생성
+    //        return AVVideoCompositionCoreAnimationTool(
+    //            postProcessingAsVideoLayer: videoLayer,
+    //            in: parentLayer
+    //        )
+    //    }
     
     /// Composition Export
     private func exportComposition(
@@ -280,9 +280,20 @@ final class AVFoundationVideoEditingService: VideoEditingService {
     ) async throws -> URL {
         print("💾 [Export] 시작")
         
-        // 1. 출력 URL 생성
-        let outputURL = FileManager.default
-            .temporaryDirectory
+        // ✅ Documents 디렉토리 사용
+        let documentsURL = FileManager.default
+            .urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let exportsDirectory = documentsURL.appendingPathComponent("Exports")
+        
+        // 디렉토리 생성
+        if !FileManager.default.fileExists(atPath: exportsDirectory.path) {
+            try FileManager.default.createDirectory(
+                at: exportsDirectory,
+                withIntermediateDirectories: true
+            )
+        }
+        
+        let outputURL = exportsDirectory
             .appendingPathComponent("export_\(UUID().uuidString).mp4")
         
         // 2. 기존 파일 있으면 삭제
@@ -334,61 +345,61 @@ final class AVFoundationVideoEditingService: VideoEditingService {
         }
     }
     
-//    /// 텍스트를 CIImage로 변환
-//    private func createTextImage(
-//        text: String,
-//        fontSize: CGFloat,
-//        color: UIColor,
-//        videoSize: CGSize
-//    ) -> CIImage? {
-//        // 텍스트 속성
-//        let attributes: [NSAttributedString.Key: Any] = [
-//            .font: UIFont.systemFont(ofSize: fontSize, weight: .bold),
-//            .foregroundColor: color,
-//            .backgroundColor: UIColor.black.withAlphaComponent(0.7)
-//        ]
-//        
-//        let attributedText = NSAttributedString(string: text, attributes: attributes)
-//        
-//        // 텍스트 크기 계산
-//        let textSize = attributedText.boundingRect(
-//            with: CGSize(width: videoSize.width * 0.8, height: .greatestFiniteMagnitude),
-//            options: [.usesLineFragmentOrigin, .usesFontLeading],
-//            context: nil
-//        ).size
-//        
-//        // 패딩 추가
-//        let paddedSize = CGSize(
-//            width: textSize.width + 40,
-//            height: textSize.height + 20
-//        )
-//        
-//        // 이미지 생성
-//        UIGraphicsBeginImageContextWithOptions(paddedSize, false, 0)
-//        defer { UIGraphicsEndImageContext() }
-//        
-//        guard let context = UIGraphicsGetCurrentContext() else { return nil }
-//        
-//        // 배경 그리기
-//        context.setFillColor(UIColor.black.withAlphaComponent(0.7).cgColor)
-//        let rect = CGRect(origin: .zero, size: paddedSize)
-//        let path = UIBezierPath(roundedRect: rect, cornerRadius: 8)
-//        path.fill()
-//        
-//        // 텍스트 그리기
-//        let textRect = CGRect(
-//            x: 20,
-//            y: 10,
-//            width: textSize.width,
-//            height: textSize.height
-//        )
-//        attributedText.draw(in: textRect)
-//        
-//        guard let uiImage = UIGraphicsGetImageFromCurrentImageContext() else { return nil }
-//        guard let cgImage = uiImage.cgImage else { return nil }
-//        
-//        return CIImage(cgImage: cgImage)
-//    }
+    //    /// 텍스트를 CIImage로 변환
+    //    private func createTextImage(
+    //        text: String,
+    //        fontSize: CGFloat,
+    //        color: UIColor,
+    //        videoSize: CGSize
+    //    ) -> CIImage? {
+    //        // 텍스트 속성
+    //        let attributes: [NSAttributedString.Key: Any] = [
+    //            .font: UIFont.systemFont(ofSize: fontSize, weight: .bold),
+    //            .foregroundColor: color,
+    //            .backgroundColor: UIColor.black.withAlphaComponent(0.7)
+    //        ]
+    //
+    //        let attributedText = NSAttributedString(string: text, attributes: attributes)
+    //
+    //        // 텍스트 크기 계산
+    //        let textSize = attributedText.boundingRect(
+    //            with: CGSize(width: videoSize.width * 0.8, height: .greatestFiniteMagnitude),
+    //            options: [.usesLineFragmentOrigin, .usesFontLeading],
+    //            context: nil
+    //        ).size
+    //
+    //        // 패딩 추가
+    //        let paddedSize = CGSize(
+    //            width: textSize.width + 40,
+    //            height: textSize.height + 20
+    //        )
+    //
+    //        // 이미지 생성
+    //        UIGraphicsBeginImageContextWithOptions(paddedSize, false, 0)
+    //        defer { UIGraphicsEndImageContext() }
+    //
+    //        guard let context = UIGraphicsGetCurrentContext() else { return nil }
+    //
+    //        // 배경 그리기
+    //        context.setFillColor(UIColor.black.withAlphaComponent(0.7).cgColor)
+    //        let rect = CGRect(origin: .zero, size: paddedSize)
+    //        let path = UIBezierPath(roundedRect: rect, cornerRadius: 8)
+    //        path.fill()
+    //
+    //        // 텍스트 그리기
+    //        let textRect = CGRect(
+    //            x: 20,
+    //            y: 10,
+    //            width: textSize.width,
+    //            height: textSize.height
+    //        )
+    //        attributedText.draw(in: textRect)
+    //
+    //        guard let uiImage = UIGraphicsGetImageFromCurrentImageContext() else { return nil }
+    //        guard let cgImage = uiImage.cgImage else { return nil }
+    //
+    //        return CIImage(cgImage: cgImage)
+    //    }
 }
 
 // MARK: - Error

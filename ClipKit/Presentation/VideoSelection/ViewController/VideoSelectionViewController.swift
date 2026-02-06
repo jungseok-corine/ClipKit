@@ -107,7 +107,7 @@ final class VideoSelectionViewController: UIViewController {
         present(picker, animated: true)
     }
     
-    private func handleSelecetedVideo(url: URL) {
+    private func handleSelectedVideo(url: URL) {
         // VideoProject 생성
         let project = VideoProject(videoURL: url)
         
@@ -154,18 +154,31 @@ extension VideoSelectionViewController: PHPickerViewControllerDelegate {
                 return
             }
             
-            // 임시 디렉토리로 복사
-            let tempURL = FileManager.default.temporaryDirectory
-                .appendingPathComponent(url.lastPathComponent)
+            // ✅ Documents 디렉토리 사용
+            let documentsURL = FileManager.default
+                .urls(for: .documentDirectory, in: .userDomainMask)[0]
+            let videosDirectory = documentsURL.appendingPathComponent("OriginalVideos")
+            
+            // 디렉토리 생성
+            if !FileManager.default.fileExists(atPath: videosDirectory.path) {
+                try? FileManager.default.createDirectory(
+                    at: videosDirectory,
+                    withIntermediateDirectories: true
+                )
+            }
+            
+            // 고유 파일명으로 복사
+            let fileName = "\(UUID().uuidString)_\(url.lastPathComponent)"
+            let permanentURL = videosDirectory.appendingPathComponent(fileName)
             
             do {
-                if FileManager.default.fileExists(atPath: tempURL.path) {
-                    try FileManager.default.removeItem(at: tempURL)
+                if FileManager.default.fileExists(atPath: permanentURL.path) {
+                    try FileManager.default.removeItem(at: permanentURL)
                 }
-                try FileManager.default.copyItem(at: url, to: tempURL)
+                try FileManager.default.copyItem(at: url, to: permanentURL)
                 
                 DispatchQueue.main.async {
-                    self.handleSelecetedVideo(url: tempURL)
+                    self.handleSelectedVideo(url: permanentURL) // ← 영구 경로 사용
                 }
             } catch {
                 print("파일 복사 실패: \(error)")
